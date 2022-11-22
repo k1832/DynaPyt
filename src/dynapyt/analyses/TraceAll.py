@@ -14,12 +14,12 @@ class TraceAll(BaseAnalysis):
     
     def log(self, iid: int, *args, **kwargs):
         res = ''
-        # for arg in args:
-        #     if 'danger_of_recursion' in kwargs:
-        #         res += ' ' + str(hex(id(arg)))
-        #     else:
-        #         res += ' ' + str(arg)
-        logging.info(str(iid) + ': ' + res[:80])
+        for arg in args:
+            if 'danger_of_recursion' in kwargs:
+                res += ' ' + str(hex(id(arg)))
+            else:
+                res += ' ' + str(arg)
+        logging.info("{}: {}".format(str(iid), res[:80]))
 
     # Literals
     
@@ -759,7 +759,7 @@ class TraceAll(BaseAnalysis):
         """
         self.log(iid, '   If', cond_value)
 
-    def enter_for(self, dyn_ast: str, iid: int, next_value: Any, is_async: bool) -> Optional[Any]:
+    def enter_for(self, dyn_ast: str, iid: int, next_value: Any) -> Optional[Any]:
         """Hook for entering a single iteration of a for loop.
 
         Parameters

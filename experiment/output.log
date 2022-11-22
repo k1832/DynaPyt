@@ -1,0 +1,214 @@
+-1:  Execution started
+21:  Comparison Equal __main__ __main__ -> True
+21:  Comparison __main__ __main__ -> True
+24:  Control-flow enter with condition True
+24:     If True
+22:  Accessing
+22:   Reading
+22:      Reading
+23:  Before function call
+17:  Accessing
+17:   Reading
+17:      Reading
+18:  Literal    value: 101011
+18:      String value: 101011
+19:  Before function call
+0:  Literal    value: 0
+0:      Integer value: 0
+1:  Accessing
+1:      Writing
+2:  Accessing
+2:   Reading
+2:      Reading
+3:  Before function call
+3:  After function call
+4:  Before function call
+4:  After function call
+14:  Control-flow enter with condition True
+14:     For 0
+5:  Literal    value: 1
+5:      Integer value: 1
+6:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+6:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+6:  Accessing
+6:      Writing
+6:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+6:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+7:  Accessing
+7:   Reading
+7:      Reading
+8:  Accessing
+8:   Reading
+8:      Reading
+9:  Accessing
+9:   Reading
+9:  Slice [0]
+10:  Comparison Equal 1 1 -> True
+10:  Comparison 1 1 -> True
+13:  Control-flow enter with condition True
+13:     If True
+11:  Literal    value: 1
+11:      Integer value: 1
+12:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+12:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+12:  Accessing
+12:      Writing
+12:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+12:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+13:  Control-flow exit
+14:  Control-flow enter with condition True
+14:     For 1
+5:  Literal    value: 1
+5:      Integer value: 1
+6:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+6:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+6:  Accessing
+6:      Writing
+6:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+6:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+7:  Accessing
+7:   Reading
+7:      Reading
+8:  Accessing
+8:   Reading
+8:      Reading
+9:  Accessing
+9:   Reading
+9:  Slice [1]
+10:  Comparison Equal 0 1 -> False
+10:  Comparison 0 1 -> False
+13:  Control-flow enter with condition False
+13:     If False
+14:  Control-flow enter with condition True
+14:     For 2
+5:  Literal    value: 1
+5:      Integer value: 1
+6:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+6:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+6:  Accessing
+6:      Writing
+6:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+6:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+7:  Accessing
+7:   Reading
+7:      Reading
+8:  Accessing
+8:   Reading
+8:      Reading
+9:  Accessing
+9:   Reading
+9:  Slice [2]
+10:  Comparison Equal 1 1 -> True
+10:  Comparison 1 1 -> True
+13:  Control-flow enter with condition True
+13:     If True
+11:  Literal    value: 1
+11:      Integer value: 1
+12:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+12:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+12:  Accessing
+12:      Writing
+12:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+12:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+13:  Control-flow exit
+14:  Control-flow enter with condition True
+14:     For 3
+5:  Literal    value: 1
+5:      Integer value: 1
+6:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+6:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+6:  Accessing
+6:      Writing
+6:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+6:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+7:  Accessing
+7:   Reading
+7:      Reading
+8:  Accessing
+8:   Reading
+8:      Reading
+9:  Accessing
+9:   Reading
+9:  Slice [3]
+10:  Comparison Equal 0 1 -> False
+10:  Comparison 0 1 -> False
+13:  Control-flow enter with condition False
+13:     If False
+14:  Control-flow enter with condition True
+14:     For 4
+5:  Literal    value: 1
+5:      Integer value: 1
+6:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+6:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+6:  Accessing
+6:      Writing
+6:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+6:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+7:  Accessing
+7:   Reading
+7:      Reading
+8:  Accessing
+8:   Reading
+8:      Reading
+9:  Accessing
+9:   Reading
+9:  Slice [4]
+10:  Comparison Equal 1 1 -> True
+10:  Comparison 1 1 -> True
+13:  Control-flow enter with condition True
+13:     If True
+11:  Literal    value: 1
+11:      Integer value: 1
+12:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+12:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+12:  Accessing
+12:      Writing
+12:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+12:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+13:  Control-flow exit
+14:  Control-flow enter with condition True
+14:     For 5
+5:  Literal    value: 1
+5:      Integer value: 1
+6:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+6:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+6:  Accessing
+6:      Writing
+6:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+6:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+7:  Accessing
+7:   Reading
+7:      Reading
+8:  Accessing
+8:   Reading
+8:      Reading
+9:  Accessing
+9:   Reading
+9:  Slice [5]
+10:  Comparison Equal 1 1 -> True
+10:  Comparison 1 1 -> True
+13:  Control-flow enter with condition True
+13:     If True
+11:  Literal    value: 1
+11:      Integer value: 1
+12:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+12:  Binary Operation <function binary_to_decimal.<locals>.<lambda> at 0x101630f70> 
+12:  Accessing
+12:      Writing
+12:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+12:  Augmented assignment <function binary_to_decimal.<locals>.<lambda> at 0x101630f
+13:  Control-flow exit
+14:  Control-flow enter with condition False
+14:     For 
+14:  Control-flow exit
+15:  Accessing
+15:   Reading
+15:      Reading
+16:  Exiting function
+16:     Returning 43
+19:  After function call
+20:  Before function call
+20:  After function call
+23:  After function call
+24:  Control-flow exit
+-1:  Execution ended

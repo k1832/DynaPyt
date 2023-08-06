@@ -22,11 +22,11 @@ class TraceAll(BaseAnalysis):
 
     def log(self, iid: int, *args, **kwargs):
         res = ""
-        # for arg in args:
-        #     if 'danger_of_recursion' in kwargs:
-        #         res += ' ' + str(hex(id(arg)))
-        #     else:
-        #         res += ' ' + str(arg)
+        for arg in args:
+            if 'danger_of_recursion' in kwargs:
+                res += ' ' + str(hex(id(arg)))
+            else:
+                res += ' ' + str(arg)
         logging.info(str(iid) + ": " + res[:80])
 
     # Literals
@@ -788,7 +788,7 @@ class TraceAll(BaseAnalysis):
         iid : int
             Unique ID of the syntax tree node.
 
-        function : str
+        function : Callable
             Function which will be called.
 
         pos_args : Tuple
@@ -798,7 +798,7 @@ class TraceAll(BaseAnalysis):
             The keyword arguments passed to the function.
 
         """
-        self.log(iid, "Before function call")
+        self.log(iid, f"Before function call: {function.__name__}, pos_args: {pos_args}")
 
     def post_call(
         self,
@@ -820,7 +820,7 @@ class TraceAll(BaseAnalysis):
         iid : int
             Unique ID of the syntax tree node.
 
-        val : Any
+        result : Any
             The return value of the function.
 
         call: Callable
@@ -839,7 +839,7 @@ class TraceAll(BaseAnalysis):
             If provided, overwrites the returned value.
 
         """
-        self.log(iid, "After function call")
+        self.log(iid, f"After function call: {call.__name__}, return value: {result}")
 
     # Statements
 

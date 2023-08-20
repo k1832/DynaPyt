@@ -83,15 +83,14 @@ class CodeInstrumenter(m.MatcherDecoratableTransformer):
         if not hasattr(node, "value"):
             return False
 
-        node_s: str = node.value
-
+        node_val: str = node.value
         try:
             if (
                 "only" in self.selected_hooks[hook]
                 and len(self.selected_hooks[hook]["only"]) > 0
             ):
                 for p in self.selected_hooks[hook]["only"]:
-                    if p.match(node_s):
+                    if p.match(node_val):
                         return True
                 return False
             elif (
@@ -99,7 +98,7 @@ class CodeInstrumenter(m.MatcherDecoratableTransformer):
                 and len(self.selected_hooks[hook]["ignore"]) > 0
             ):
                 for p in self.selected_hooks[hook]["ignore"]:
-                    if p.match(node_s):
+                    if p.match(node_val):
                         return False
                 return True
             else:

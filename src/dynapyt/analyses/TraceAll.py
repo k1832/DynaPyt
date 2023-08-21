@@ -1,3 +1,4 @@
+import os
 import logging
 from types import TracebackType
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
@@ -14,11 +15,10 @@ class TraceAll(BaseAnalysis):
 
     def __init__(self) -> None:
         super().__init__()
-        root_logger = logging.getLogger()
-        root_logger.setLevel(logging.INFO)
-        handler = logging.FileHandler("output.log", "w", "utf-8")
-        handler.setFormatter(logging.Formatter("%(message)s"))
-        root_logger.addHandler(handler)
+
+        self.log_file_path = os.path.abspath("output.log")
+        if os.path.exists(self.log_file_path):
+            os.remove(self.log_file_path)
 
     def log(self, iid: int, *args, **kwargs):
         res = ""
@@ -27,7 +27,10 @@ class TraceAll(BaseAnalysis):
                 res += ' ' + str(hex(id(arg)))
             else:
                 res += ' ' + str(arg)
-        logging.info(str(iid) + ": " + res[:80])
+        log_content = str(iid) + ": " + res[:200]
+
+        with open(self.log_file_path, "a") as f:
+            f.write(log_content + "\n")
 
     # Literals
 

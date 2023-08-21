@@ -801,7 +801,10 @@ class TraceAll(BaseAnalysis):
             The keyword arguments passed to the function.
 
         """
-        self.log(iid, f"Before function call: {function.__name__}, pos_args: {pos_args}")
+        try:
+            self.log(iid, f"Before function call: {function.__name__}, pos_args: {pos_args}")
+        except:
+            self.log(iid, f"Before function call: __failed_to_get_name__, pos_args: {pos_args}")
 
     def post_call(
         self,
@@ -842,7 +845,10 @@ class TraceAll(BaseAnalysis):
             If provided, overwrites the returned value.
 
         """
-        self.log(iid, f"After function call: {call.__name__}, return value: {result}")
+        try:
+            self.log(iid, f"After function call: {call.__name__}, return value: {result}")
+        except:
+            self.log(iid, f"After function call: __failed_to_get_name__, return value: {result}")
 
     # Statements
 

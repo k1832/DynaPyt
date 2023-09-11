@@ -22,12 +22,12 @@ class TraceAll(BaseAnalysis):
 
     def log(self, iid: int, *args, **kwargs):
         res = ""
-        # for arg in args:
-        #     if 'danger_of_recursion' in kwargs:
-        #         res += ' ' + str(hex(id(arg)))
-        #     else:
-        #         res += ' ' + str(arg)
-        logging.info(str(iid) + ": " + res[:80])
+        for arg in args:
+            if 'danger_of_recursion' in kwargs:
+                res += ' ' + str(hex(id(arg)))
+            else:
+                res += ' ' + str(arg)
+        logging.info(str(iid) + ": " + res[:200])
 
     # Literals
 
@@ -619,7 +619,7 @@ class TraceAll(BaseAnalysis):
             If provided, overwrites the returned value.
 
         """
-        self.log(iid, "Attribute", name)
+        self.log(iid, "Attribute: ", name, "of", base, "is", val)
 
     def read_subscript(
         self, dyn_ast: str, iid: int, base: Any, sl: List[Union[int, Tuple]], val: Any
@@ -798,7 +798,13 @@ class TraceAll(BaseAnalysis):
             The keyword arguments passed to the function.
 
         """
-        self.log(iid, "Before function call")
+        function_name = "FAILED_TO_GET_NAME"
+        try:
+            function_name = function.__name__
+        except:
+            pass
+
+        self.log(iid, "Before function call:", function_name, pos_args, kw_args)
 
     def post_call(
         self,
@@ -839,7 +845,7 @@ class TraceAll(BaseAnalysis):
             If provided, overwrites the returned value.
 
         """
-        self.log(iid, "After function call")
+        self.log(iid, "After function call, result: ", result)
 
     # Statements
 

@@ -200,3 +200,5 @@ docs/search.js
 docs/hooks.md
 
 logs/
+
+post-processing/generated-tests/

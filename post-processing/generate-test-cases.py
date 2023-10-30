@@ -2,10 +2,10 @@
 import os
 from typing import Optional, List
 import pickle
+from classes.meta_data import MetaData
 
 LOG_BASE = "/Users/keita/projects/DynaPyt/logs/"
 GENERATED_TEST_BASE = "/Users/keita/projects/DynaPyt/post-processing/generated-tests"
-META_FILE_SUFFIX = "_META.txt"
 CALL_FILE_SUFFIX = "_CALL.pickle"
 RETURN_FILE_SUFFIX = "_RETURN.pickle"
 
@@ -20,44 +20,6 @@ EXPECTED_RET_VAR_NAME = "expected"
 
 preload_modules = ["pickle"]
 
-class MetaData:
-
-    def __init__(self, path):
-        assert MetaData.is_meta_file(path), f"{path} is not a meta file."
-
-        # Assuming it's a meta file
-        self.path = path
-        self.file_name = os.path.basename(path)
-
-        with open(path) as f:
-            lines = f.readlines()
-
-        self.module_name = lines[0].strip()
-        self.module_import_path = lines[1].strip()
-        self.call_pickle_path = lines[2].strip()
-        self.return_pickle_path = lines[3].strip()
-
-    def debug_print(self) -> None:
-        print(self.module_name)
-        print(self.module_import_path)
-        print(self.call_pickle_path)
-        print(self.return_pickle_path)
-
-    def get_test_case_name(self) -> str:
-        """
-        Example:
-            self.file_name: "00001_00021_META.txt"
-        Returns:
-            "test_00001_00021"
-        """
-        return "test_" + "_".join(self.file_name.split("_")[:2])
-
-    def get_log_dir_name(self) -> str:
-        return os.path.basename(os.path.dirname(self.path))
-
-    @classmethod
-    def is_meta_file(cls, path: str) -> bool:
-        return os.path.isfile(path) and path.endswith(META_FILE_SUFFIX)
 
 def get_pos_arg_assign_code(pos_arg_len: int) -> Optional[str]:
     if not pos_arg_len:
@@ -86,11 +48,15 @@ def get_kw_arg_for_func_code(kw_args: dict) -> Optional[str]:
         kw_arg_list.append(f"{key}={POS_ARG_VAR_NAME}['{key}']")
     return ", ".join(kw_arg_list)
 
-def get_load_call_pickle_code(path: str) -> str:
+def get_load_call_pickle_code(path: str, need_pos: bool, need_kw: bool) -> str:
     # return (f'with open("{path}", "rb") as f:\n'
     #         + f"{INDT}{FUNC_VAR_NAME}, {POS_ARG_VAR_NAME}, {KW_ARG_VAR_NAME} = pickle.load(f)")
+
+    pos_arg_var_name = POS_ARG_VAR_NAME if need_pos else "_"
+    kw_arg_var_name = KW_ARG_VAR_NAME if need_kw else "_"
+
     return (f'with open("{path}", "rb") as f:\n'
-            + f"{INDT}{POS_ARG_VAR_NAME}, {KW_ARG_VAR_NAME} = pickle.load(f)")
+            + f"{INDT}{pos_arg_var_name}, {kw_arg_var_name} = pickle.load(f)")
 
 def get_load_return_pickle_code(path: str) -> str:
     return (f'with open("{path}", "rb") as f:\n'
@@ -122,7 +88,7 @@ def generate_test_case(meta_file: MetaData) -> Optional[str]:
     pos_arg_len = len(pos_args)
     kw_arg_len = len(kw_args)
 
-    ret += get_load_call_pickle_code(meta_file.call_pickle_path) + "\n"
+    ret += get_load_call_pickle_code(meta_file.call_pickle_path, pos_arg_len, kw_arg_len) + "\n"
 
     pos_arg_assign_code = get_pos_arg_assign_code(pos_arg_len)
     if pos_arg_assign_code:

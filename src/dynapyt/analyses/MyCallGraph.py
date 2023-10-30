@@ -249,7 +249,7 @@ class MyCallGraph(BaseAnalysis):
         _, pos_args, kw_args = self.call_return_pairs[iid].pop()
 
 
-        if self.count > 200:
+        if self.count > 500:
             # too much data for now
             return
 

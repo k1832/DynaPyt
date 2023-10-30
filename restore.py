@@ -13,19 +13,19 @@ def main():
     ORIGINAL_SUFFIX = ".orig"
     DYNAPYT_JSON_SUFFIX = "-dynapyt.json"
 
-    for root, _, files in os.walk(base):
-        if "/example_programs/" in root:
+    for curr_path, _dir_names, file_names in os.walk(base):
+        if "/example_programs/" in curr_path:
             continue
 
-        for file in files:
-            if file.endswith(DYNAPYT_JSON_SUFFIX):
-                os.remove(os.path.join(root, file))
+        for file_path in file_names:
+            if file_path.endswith(DYNAPYT_JSON_SUFFIX):
+                os.remove(os.path.join(curr_path, file_path))
                 continue
 
-            if not file.endswith(PY_SUFFIX):
+            if not file_path.endswith(PY_SUFFIX):
                 continue
 
-            py_file = os.path.join(root, file)
+            py_file = os.path.join(curr_path, file_path)
             orig_file = py_file + ORIGINAL_SUFFIX
 
             if os.path.exists(py_file) and os.path.exists(orig_file):

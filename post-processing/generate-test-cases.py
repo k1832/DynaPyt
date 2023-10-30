@@ -63,7 +63,7 @@ def get_pos_arg_assign_code(pos_arg_len: int) -> Optional[str]:
     if not pos_arg_len:
         return None
 
-    pos_arg_var_names = [f"pos_arg_{i.zfill(2)}" for i in range(pos_arg_len)]
+    pos_arg_var_names = [f"pos_arg_{str(i).zfill(2)}" for i in range(pos_arg_len)]
 
     ret = ", ".join(pos_arg_var_names)
     ret += " = " + POS_ARG_VAR_NAME
@@ -73,7 +73,7 @@ def get_pos_arg_for_func_code(pos_arg_len: int) -> Optional[str]:
     if not pos_arg_len:
         return None
 
-    pos_arg_var_names = [f"pos_arg_{i.zfill(2)}" for i in range(pos_arg_len)]
+    pos_arg_var_names = [f"pos_arg_{str(i).zfill(2)}" for i in range(pos_arg_len)]
     return ", ".join(pos_arg_var_names)
 
 def get_kw_arg_for_func_code(kw_args: dict) -> Optional[str]:
@@ -87,8 +87,10 @@ def get_kw_arg_for_func_code(kw_args: dict) -> Optional[str]:
     return ", ".join(kw_arg_list)
 
 def get_load_call_pickle_code(path: str) -> str:
+    # return (f'with open("{path}", "rb") as f:\n'
+    #         + f"{INDT}{FUNC_VAR_NAME}, {POS_ARG_VAR_NAME}, {KW_ARG_VAR_NAME} = pickle.load(f)")
     return (f'with open("{path}", "rb") as f:\n'
-            + f"{INDT}{FUNC_VAR_NAME}, {POS_ARG_VAR_NAME}, {KW_ARG_VAR_NAME} = pickle.load(f)")
+            + f"{INDT}{POS_ARG_VAR_NAME}, {KW_ARG_VAR_NAME} = pickle.load(f)")
 
 def get_load_return_pickle_code(path: str) -> str:
     return (f'with open("{path}", "rb") as f:\n'
@@ -110,8 +112,12 @@ def generate_test_case(meta_file: MetaData) -> Optional[str]:
 
     ret += meta_file.module_import_path + "\n\n"
 
-    with open(meta_file.call_pickle_path, 'rb') as f:
-        module, pos_args, kw_args = pickle.load(f)
+    try:
+        with open(meta_file.call_pickle_path, 'rb') as f:
+            pos_args, kw_args = pickle.load(f)
+    except:
+        # Broken pickle file
+        return None
 
     pos_arg_len = len(pos_args)
     kw_arg_len = len(kw_args)
@@ -127,14 +133,14 @@ def generate_test_case(meta_file: MetaData) -> Optional[str]:
     # Function args are here
     pos_arg_for_func = get_pos_arg_for_func_code(len(pos_args))
     if pos_arg_for_func:
-        ret += pos_arg_for_func + "\n"
+        ret += pos_arg_for_func
 
     kw_arg_for_func = get_kw_arg_for_func_code(kw_args)
     if kw_arg_for_func:
         if pos_arg_for_func:
             ret += ", "
 
-        ret += kw_arg_for_func + "\n"
+        ret += kw_arg_for_func
     # Function args are here
     ret += ")\n"
 
@@ -148,7 +154,7 @@ def get_test_file_path(meta_file: MetaData) -> str:
     return os.path.join(ret, meta_file.get_test_case_name() + ".py")
 
 def main():
-    meta_files = []
+    meta_files: List[MetaData] = []
 
     for log_dir_name in os.listdir(LOG_BASE):
         log_dir_path = os.path.join(LOG_BASE, log_dir_name)
@@ -166,20 +172,29 @@ def main():
         exit()
 
     for i, meta_file in enumerate(meta_files):
-        py_content = ""
+        test_code = ""
         for preload_module in preload_modules:
             # print(f"import {preload_module}")
-            py_content += f"import {preload_module}\n"
+            test_code += f"import {preload_module}\n"
 
         # print()
-        py_content += "\n"
+        test_code += "\n"
 
         # print(generate_test_case(meta_files[0]))
-        py_content += generate_test_case(meta_files[0])
+        test_case_code = generate_test_case(meta_file)
+        if test_case_code is None:
+            print(f"Failed to create a test for {meta_file.path}")
+            continue
 
-        print(get_test_file_path(meta_file))
-        # test_file_path = os.path.join(GENERATED_TEST_BASE, meta_file meta_file.get_test_case_name() + ".py")
-        # os.makedirs(, exist_ok=True)
+        test_code += test_case_code + "\n"
+
+        test_file_path = get_test_file_path(meta_file)
+        print(f"Test file path: {test_file_path}")
+        # print(test_code)
+        os.makedirs(os.path.dirname(test_file_path), exist_ok=True)
+        with open(test_file_path, "w") as f:
+            f.write(test_code)
+
         # print(meta_file.get_log_dir_name())
         # try:
         #     exec(py_content)
@@ -188,8 +203,8 @@ def main():
         # except:
         #     print("FAILED")
 
-        if i > 3:
-            break
+        # if i > 3:
+        #     break
 
 
 if __name__ == '__main__':

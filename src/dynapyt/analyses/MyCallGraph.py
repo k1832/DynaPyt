@@ -255,14 +255,14 @@ class MyCallGraph(BaseAnalysis):
 
         try:
             with open(call_pickle_file_path, "wb") as f:
-                pickle.dump((call, pos_args, kw_args), f)
+                pickle.dump((call, pos_args, kw_args), f, protocol=pickle.HIGHEST_PROTOCOL)
         except:
             with open(self.error_file_path, "a") as f:
                 f.write(f"Failed to dump call: {call_pickle_file_path}\n")
 
         try:
             with open(return_pickle_file_path, "wb") as f:
-                pickle.dump(result, f)
+                pickle.dump(result, f, protocol=pickle.HIGHEST_PROTOCOL)
         except:
             with open(self.error_file_path, "a") as f:
                 f.write(f"Failed to dump return: {return_pickle_file_path}\n")

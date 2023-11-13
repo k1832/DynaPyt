@@ -1,6 +1,9 @@
 import os
 import subprocess
+from typing import Optional
 from classes.meta_data import MetaData
+
+import argparse
 
 TEST_BASE = "/Users/keita/projects/DynaPyt/post-processing/generated-tests"
 LOG_BASE = "/Users/keita/projects/DynaPyt/logs/"
@@ -9,11 +12,27 @@ TEST_STATS_SUCCESS_FILE = "/Users/keita/projects/DynaPyt/post-processing/test-ru
 
 META_FILE_SUFFIX = "_META.txt"
 
-def run_test(path: str) -> int:
+def run_test(path: str, rcfile: Optional[str] = None, datafile: Optional[str] = None, append: bool = False) -> int:
     """
     Run python script at `path` and returns its return code.
     """
-    child = subprocess.Popen(["python", path], stdout=subprocess.PIPE)
+
+    if rcfile is not None or datafile is not None:
+        # Only when both are specified
+        cmd = ["coverage", "run"]
+        if append:
+            cmd.append("-a")
+        if datafile is not None:
+            cmd.append(f"--data-file={datafile}")
+        if rcfile is not None:
+            cmd.append(f"--rcfile={rcfile}")
+        cmd.append(path)
+    else:
+        cmd = ["python", path]
+
+    print(f"Running: {' '.join(cmd)}")
+    child = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+
     _ = child.communicate()[0]
     return child.returncode
 
@@ -30,6 +49,27 @@ def get_meta_file_path_from_test_path(test_path: str) -> str:
     return os.path.join(LOG_BASE, dir_name, meta_file_name)
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--success-only", action="store_true", help="Only run succeeded tests")
+    parser.add_argument("-rc", "--rcfile", type=str, help="rcfile for coverage")
+    parser.add_argument("-df", "--datafile", type=str, help="datafile for coverage")
+    parser.add_argument("-a", "--append", action="store_true", help="append coverage data")
+    args = parser.parse_args()
+
+    if args.success_only:
+        with open(TEST_STATS_SUCCESS_FILE, "r") as f:
+            success_tests = f.readlines()
+
+        for i, success_test in enumerate(success_tests):
+            file_path, _ = success_test.split()
+
+            rcfile = args.rcfile if args.rcfile else None
+            datafile = args.datafile if args.datafile else None
+            append = args.append
+            assert run_test(file_path, rcfile=rcfile, datafile=datafile, append=(i>0 or append)) == 0
+
+        exit()
+
     success_module_count = {}
     failure_module_count = {}
     for test_case_dir_i, test_case_dir in enumerate(os.listdir(TEST_BASE)):

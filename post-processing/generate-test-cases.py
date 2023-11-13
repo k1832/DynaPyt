@@ -27,8 +27,13 @@ def get_pos_arg_assign_code(pos_arg_len: int) -> Optional[str]:
 
     pos_arg_var_names = [f"pos_arg_{str(i).zfill(2)}" for i in range(pos_arg_len)]
 
+    if pos_arg_len == 1:
+        # To prevent this: pos_args: ('/Resource',) -> pos_arg_00: ('/Resource',)
+        return f"{pos_arg_var_names[0]} = {POS_ARG_VAR_NAME}[0]"
+
     ret = ", ".join(pos_arg_var_names)
-    ret += " = " + POS_ARG_VAR_NAME
+    ret += f" = {POS_ARG_VAR_NAME}"
+
     return ret
 
 def get_pos_arg_for_func_code(pos_arg_len: int) -> Optional[str]:
@@ -62,7 +67,7 @@ def get_load_return_pickle_code(path: str) -> str:
     return (f'with open("{path}", "rb") as f:\n'
             + f"{INDT}{EXPECTED_RET_VAR_NAME} = pickle.load(f)")
 
-def generate_test_case(meta_file: MetaData) -> Optional[str]:
+def generate_test_case(meta_file: MetaData, ignore_no_arg_calls: bool = True) -> Optional[str]:
     """
     Note: It only supports pos_args now!
     """
@@ -85,10 +90,32 @@ def generate_test_case(meta_file: MetaData) -> Optional[str]:
         # Broken pickle file
         return None
 
+    # TODO(k1832): Investigate why this causes duplication of a log directory
+    try:
+        with open(meta_file.return_pickle_path, 'rb') as f:
+            ret_value = pickle.load(f)
+    except:
+        # Broken pickle file
+        return None
+    # TODO(k1832): Revisit if ignoring calls with None as return value is a good idea
+    if ret_value is None:
+        return None
+
     pos_arg_len = len(pos_args)
     kw_arg_len = len(kw_args)
 
+    if ignore_no_arg_calls and not pos_arg_len and not kw_arg_len:
+        return None
+
     ret += get_load_call_pickle_code(meta_file.call_pickle_path, pos_arg_len, kw_arg_len) + "\n"
+    ret += get_load_return_pickle_code(meta_file.return_pickle_path) + "\n"
+
+    ret += "\n"
+
+    ret += "# Make sure the function returns something\n"
+    ret += f"assert {EXPECTED_RET_VAR_NAME} is not None\n"
+
+    ret += "\n"
 
     pos_arg_assign_code = get_pos_arg_assign_code(pos_arg_len)
     if pos_arg_assign_code:
@@ -110,7 +137,8 @@ def generate_test_case(meta_file: MetaData) -> Optional[str]:
     # Function args are here
     ret += ")\n"
 
-    ret += get_load_return_pickle_code(meta_file.return_pickle_path) + "\n"
+    ret += "\n"
+
     ret += f"assert {RET_VAR_NAME} == {EXPECTED_RET_VAR_NAME}\n"
 
     return ret
@@ -147,6 +175,8 @@ def main():
         test_code += "\n"
 
         # print(generate_test_case(meta_files[0]))
+
+        # TODO(k1832): Function calls with no arguments should be excluded
         test_case_code = generate_test_case(meta_file)
         if test_case_code is None:
             print(f"Failed to create a test for {meta_file.path}")

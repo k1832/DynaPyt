@@ -202,3 +202,4 @@ docs/hooks.md
 logs/
 
 post-processing/generated-tests/
+test-run-stats/

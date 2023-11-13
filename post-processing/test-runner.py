@@ -4,6 +4,8 @@ from classes.meta_data import MetaData
 
 TEST_BASE = "/Users/keita/projects/DynaPyt/post-processing/generated-tests"
 LOG_BASE = "/Users/keita/projects/DynaPyt/logs/"
+TEST_STATS_FAILURE_FILE = "/Users/keita/projects/DynaPyt/post-processing/test-run-stats/failure.txt"
+TEST_STATS_SUCCESS_FILE = "/Users/keita/projects/DynaPyt/post-processing/test-run-stats/success.txt"
 
 META_FILE_SUFFIX = "_META.txt"
 
@@ -58,6 +60,8 @@ def main():
                     success_module_count[module_name] = 0
 
                 success_module_count[module_name] += 1
+                with open(TEST_STATS_SUCCESS_FILE, "a") as f:
+                    f.write(f"{test_case_file_path} {module_name}\n")
             except KeyboardInterrupt:
                 print("KeyboardInterrupt")
                 exit()
@@ -68,6 +72,8 @@ def main():
                     failure_module_count[module_name] = 0
 
                 failure_module_count[module_name] += 1
+                with open(TEST_STATS_FAILURE_FILE, "a") as f:
+                    f.write(f"{test_case_file_path} {module_name}\n")
 
         # Only 5 folder for now
         # if test_case_dir_i > 10:

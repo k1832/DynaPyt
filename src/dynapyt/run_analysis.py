@@ -2,6 +2,7 @@ from typing import List
 import argparse
 import importlib
 from os.path import abspath
+from tempfile import gettempdir
 from shutil import rmtree
 import sys
 from pathlib import Path
@@ -11,14 +12,16 @@ from . import runtime as _rt
 def run_analysis(
     entry: str, analyses: List[str], name: str = None, coverage: bool = False
 ):
+    coverage_dir = Path(gettempdir()) / "dynapyt_coverage"
     if coverage:
-        Path("/tmp/dynapyt_coverage").mkdir(exist_ok=True)
+        coverage_dir.mkdir(exist_ok=True)
     else:
-        rmtree("/tmp/dynapyt_coverage", ignore_errors=True)
+        rmtree(str(coverage_dir), ignore_errors=True)
 
-    if Path("/tmp/dynapyt_analyses.txt").exists():
-        Path("/tmp/dynapyt_analyses.txt").unlink()
-    with open("/tmp/dynapyt_analyses.txt", "w") as f:
+    analyses_file = Path(gettempdir()) / "dynapyt_analyses.txt"
+    if analyses_file.exists():
+        analyses_file.unlink()
+    with open(str(analyses_file), "w") as f:
         f.write("\n".join(analyses))
 
     _rt.set_analysis(analyses)
@@ -39,13 +42,14 @@ def run_analysis(
     _rt.end_execution()
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--entry", help="Entry file for execution")
-parser.add_argument("--analysis", help="Analysis class name(s)", nargs="+")
-parser.add_argument("--name", help="Associates a given name with current run")
-parser.add_argument("--coverage", help="Enables coverage", action="store_true")
-
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--entry", help="Entry file for execution", required=True)
+    parser.add_argument(
+        "--analysis", help="Analysis class name(s)", nargs="+", required=True
+    )
+    parser.add_argument("--name", help="Associates a given name with current run")
+    parser.add_argument("--coverage", help="Enables coverage", action="store_true")
     args = parser.parse_args()
     name = args.name
     analyses = args.analysis

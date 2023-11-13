@@ -5,7 +5,7 @@ import sys
 import atexit
 import signal
 import json
-import importlib
+import tempfile
 from filelock import FileLock
 import libcst as cst
 from .utils.hooks import snake, get_name
@@ -26,16 +26,19 @@ def end_execution():
     end_execution_called = True
     call_if_exists("end_execution")
     if covered is not None:
-        with FileLock("/tmp/dynapyt_coverage/covered.jsonl.lock"):
-            if Path("/tmp/dynapyt_coverage/covered.jsonl").exists():
+        coverage_file = (
+            Path(tempfile.gettempdir()) / "dynapyt_coverage" / "covered.jsonl"
+        )
+        with FileLock(f"{str(coverage_file)}.lock"):
+            if coverage_file.exists():
                 existing_coverage = {}
-                with open("/tmp/dynapyt_coverage/covered.jsonl", "r") as f:
+                with open(str(coverage_file), "r") as f:
                     content = f.read().splitlines()
                 for c in content:
                     tmp = json.loads(c)
                     print(tmp, file=sys.stderr)
                     existing_coverage.update(tmp)
-                Path("/tmp/dynapyt_coverage/covered.jsonl").unlink()
+                coverage_file.unlink()
             else:
                 existing_coverage = {}
             for r_file, line_nums in covered.items():
@@ -48,7 +51,7 @@ def end_execution():
                         if ana not in existing_coverage[r_file][ln]:
                             existing_coverage[r_file][ln][ana] = 0
                         existing_coverage[r_file][ln][ana] += count
-            with open("/tmp/dynapyt_coverage/covered.jsonl", "w") as f:
+            with open(str(coverage_file), "w") as f:
                 for r_file, line_nums in existing_coverage.items():
                     tmp = {r_file: line_nums}
                     f.write(json.dumps(tmp) + "\n")
@@ -58,7 +61,8 @@ def set_analysis(new_analyses: List[Any]):
     global analyses, covered
     if analyses is None:
         analyses = []
-        if Path("/tmp/dynapyt_coverage/").exists():
+        coverage_dir = Path(tempfile.gettempdir()) / "dynapyt_coverage"
+        if coverage_dir.exists():
             covered = {}
         signal.signal(signal.SIGINT, end_execution)
         signal.signal(signal.SIGTERM, end_execution)
@@ -95,7 +99,8 @@ def call_if_exists(f, *args):
     global covered, analyses, current_file
     return_value = None
     if analyses is None:
-        with open("/tmp/dynapyt_analyses.txt", "r") as af:
+        analyses_file = Path(tempfile.gettempdir()) / "dynapyt_analyses.txt"
+        with open(str(analyses_file), "r") as af:
             analysis_list = af.read().split("\n")
         set_analysis(analysis_list)
     for analysis in analyses:
@@ -155,8 +160,35 @@ def _aug_assign_(dyn_ast, iid, left, opr, right):
         "binary_operation", dyn_ast, iid, operator[opr][:-6], left, right, None
     )
     call_if_exists(snake(operator[opr][:-6]), dyn_ast, iid, left, right, None)
-    call_if_exists("memory_access", dyn_ast, iid, right)
-    call_if_exists("write", dyn_ast, iid, [left], right)
+    eval_left = left()
+    if opr == 0:
+        new_val = eval_left + right
+    elif opr == 1:
+        new_val = eval_left & right
+    elif opr == 2:
+        new_val = eval_left | right
+    elif opr == 3:
+        new_val = eval_left ^ right
+    elif opr == 4:
+        new_val = eval_left / right
+    elif opr == 5:
+        new_val = eval_left // right
+    elif opr == 6:
+        new_val = eval_left << right
+    elif opr == 7:
+        new_val = eval_left @ right
+    elif opr == 8:
+        new_val = eval_left % right
+    elif opr == 9:
+        new_val = eval_left * right
+    elif opr == 10:
+        new_val = eval_left**right
+    elif opr == 11:
+        new_val = eval_left >> right
+    elif opr == 12:
+        new_val = eval_left - right
+    call_if_exists("memory_access", dyn_ast, iid, new_val)
+    call_if_exists("write", dyn_ast, iid, [left], new_val)
     result_high = call_if_exists(
         "augmented_assignment", dyn_ast, iid, left, operator[opr], right
     )

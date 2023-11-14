@@ -119,13 +119,7 @@ class MyCallGraph(BaseAnalysis):
         self.count = 0
 
         self.log_dir = os.path.join(LOG_BASE, self.running_time)
-
         self.error_file_path = os.path.join(self.log_dir, "error.txt")
-
-        os.makedirs(self.log_dir, exist_ok=True)
-
-        with open(self.error_file_path, "w") as f:
-            f.write("")
 
     def log(self, iid: int, *args, **kwargs):
         res = ""
@@ -240,6 +234,9 @@ class MyCallGraph(BaseAnalysis):
         zfilled_iid = str(iid).zfill(5)
         zfilled_count = str(self.count).zfill(5)
         self.count += 1
+
+        # Create a directory for the log files
+        os.makedirs(self.log_dir, exist_ok=True)
 
         pickle_prefix = f"{zfilled_count}_{zfilled_iid}"
         call_pickle_file_path = os.path.join(self.log_dir, f"{pickle_prefix}_CALL.pickle")

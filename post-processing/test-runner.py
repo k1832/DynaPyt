@@ -3,6 +3,7 @@ import subprocess
 from typing import Optional
 from classes.meta_data import MetaData
 
+from tqdm import tqdm
 import argparse
 
 TEST_BASE = "/Users/keita/projects/DynaPyt/post-processing/generated-tests"
@@ -12,25 +13,47 @@ TEST_STATS_SUCCESS_FILE = "/Users/keita/projects/DynaPyt/post-processing/test-ru
 
 META_FILE_SUFFIX = "_META.txt"
 
-def run_test(path: str, rcfile: Optional[str] = None, datafile: Optional[str] = None, append: bool = False) -> int:
+def run_test(path: str,
+             coverage: bool = False,
+             rcfile: Optional[str] = None,
+             datafile: Optional[str] = None,
+             append: bool = False,
+             parallel: bool = False,
+             progress_bar: tqdm = None) -> int:
     """
     Run python script at `path` and returns its return code.
     """
 
-    if rcfile is not None or datafile is not None:
+    if coverage:
         # Only when both are specified
         cmd = ["coverage", "run"]
-        if append:
-            cmd.append("-a")
-        if datafile is not None:
+
+        if parallel:
+            if append:
+                print("Append is ignored when parallel is specified")
+            cmd.append("-p")
+        else:
+            if append:
+                cmd.append("-a")
+
+        if datafile:
             cmd.append(f"--data-file={datafile}")
-        if rcfile is not None:
+        if rcfile:
             cmd.append(f"--rcfile={rcfile}")
+        if parallel:
+            cmd.append("-p")
+
         cmd.append(path)
     else:
         cmd = ["python", path]
 
-    print(f"Running: {' '.join(cmd)}")
+
+    msg = f"Running: {' '.join(cmd)}"
+    if progress_bar:
+        # progress_bar.set_description(msg)
+        pass
+    else:
+        print(msg)
     child = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
     _ = child.communicate()[0]
@@ -50,23 +73,41 @@ def get_meta_file_path_from_test_path(test_path: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--success-only", action="store_true", help="Only run succeeded tests")
+    parser.add_argument("-c", "--coverage", action="store_true", help="run only successful tests and collect coverage data")
     parser.add_argument("-rc", "--rcfile", type=str, help="rcfile for coverage")
     parser.add_argument("-df", "--datafile", type=str, help="datafile for coverage")
     parser.add_argument("-a", "--append", action="store_true", help="append coverage data")
+    parser.add_argument("-p", "--parallel", action="store_true", help="store coverage data with unique name")
     args = parser.parse_args()
 
-    if args.success_only:
-        with open(TEST_STATS_SUCCESS_FILE, "r") as f:
-            success_tests = f.readlines()
+    if args.coverage:
+        try:
+            with open(TEST_STATS_SUCCESS_FILE, "r") as f:
+                success_tests = f.readlines()
+        except:
+            print("No success tests found")
+            exit()
 
-        for i, success_test in enumerate(success_tests):
+        if not len(success_tests):
+            print("No success tests found")
+            exit()
+
+        progress_bar = tqdm(range(len(success_tests)))
+        for i in progress_bar:
+            success_test = success_tests[i]
             file_path, _ = success_test.split()
 
             rcfile = args.rcfile if args.rcfile else None
             datafile = args.datafile if args.datafile else None
             append = args.append
-            assert run_test(file_path, rcfile=rcfile, datafile=datafile, append=(i>0 or append)) == 0
+            parallel = args.parallel
+            assert run_test(file_path,
+                            coverage=True,
+                            rcfile=rcfile,
+                            datafile=datafile,
+                            append=(i>0 or append),
+                            parallel=parallel,
+                            progress_bar=progress_bar) == 0
 
         exit()
 

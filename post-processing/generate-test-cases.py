@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-import os
+import os, logging
 from typing import Optional, List
 import pickle
 from classes.meta_data import MetaData
+
+logging.basicConfig(level=logging.INFO)
 
 LOG_BASE = "/Users/keita/projects/DynaPyt/logs/"
 GENERATED_TEST_BASE = "/Users/keita/projects/DynaPyt/post-processing/generated-tests"
@@ -50,8 +52,28 @@ def get_kw_arg_for_func_code(kw_args: dict) -> Optional[str]:
     # ["a=kw_args['a']", "b=kw_arg['b']", ..., "z=kw_args['z']""]
     kw_arg_list = []
     for key in kw_args.keys():
-        kw_arg_list.append(f"{key}={POS_ARG_VAR_NAME}['{key}']")
+        kw_arg_list.append(f"{key}={KW_ARG_VAR_NAME}['{key}']")
     return ", ".join(kw_arg_list)
+
+def is_class_instance(a) -> bool:
+    # TODO(k1832): Revisit if this really works
+    try:
+        return a.__class__.__module__ != 'builtins'
+    except:
+        return False
+
+def is_eq_implemented(a) -> bool:
+    assert is_class_instance(a)
+    try:
+        return a.__class__.__eq__ is not object.__eq__
+    except:
+        raise Exception("Checking __eq__ failed")
+
+def comparable_object(a) -> bool:
+    if is_class_instance(a):
+        return is_eq_implemented(a)
+
+    return True
 
 def get_load_call_pickle_code(path: str, need_pos: bool, need_kw: bool) -> str:
     # return (f'with open("{path}", "rb") as f:\n'
@@ -86,7 +108,8 @@ def generate_test_case(meta_file: MetaData, ignore_no_arg_calls: bool = True) ->
     try:
         with open(meta_file.call_pickle_path, 'rb') as f:
             pos_args, kw_args = pickle.load(f)
-    except:
+    except Exception as e:
+        logging.error(e)
         # Broken pickle file
         return None
 
@@ -94,17 +117,20 @@ def generate_test_case(meta_file: MetaData, ignore_no_arg_calls: bool = True) ->
     try:
         with open(meta_file.return_pickle_path, 'rb') as f:
             ret_value = pickle.load(f)
-    except:
+    except Exception as e:
         # Broken pickle file
+        logging.error(e)
         return None
     # TODO(k1832): Revisit if ignoring calls with None as return value is a good idea
     if ret_value is None:
         return None
 
+
     pos_arg_len = len(pos_args)
     kw_arg_len = len(kw_args)
 
     if ignore_no_arg_calls and not pos_arg_len and not kw_arg_len:
+        logging.error("No arguments")
         return None
 
     ret += get_load_call_pickle_code(meta_file.call_pickle_path, pos_arg_len, kw_arg_len) + "\n"
@@ -139,8 +165,18 @@ def generate_test_case(meta_file: MetaData, ignore_no_arg_calls: bool = True) ->
 
     ret += "\n"
 
-    ret += f"assert {RET_VAR_NAME} == {EXPECTED_RET_VAR_NAME}\n"
+    """
+    Special handling for return values that are class instances.
 
+    If `__eq__` is explicitly implemented (not inherited default), the expected value and the actual value are simply compared with `==`.
+    Otherwise, check if have the same type, and compare them using `vars()` (i.e. `vars(expected) == vars(actual)`).
+    """
+
+    if comparable_object(ret_value):
+        return ret + f"assert {RET_VAR_NAME} == {EXPECTED_RET_VAR_NAME}\n"
+
+    ret += f"assert type({RET_VAR_NAME}) == type({EXPECTED_RET_VAR_NAME})\n"
+    ret += f"assert vars({RET_VAR_NAME}) == vars({EXPECTED_RET_VAR_NAME})\n"
     return ret
 
 def get_test_file_path(meta_file: MetaData) -> str:

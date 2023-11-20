@@ -98,7 +98,7 @@ def get_import_path(module: Callable, target_module_path: Optional[str]) -> Tupl
 
 
 LOG_BASE = "/Users/keita/projects/DynaPyt/logs"
-TARGET_MODULE_PATH = "site-packages/pdfrw/"
+TARGET_MODULE_PATH = "/projects/casanova/casanova"
 
 class MyCallGraph(BaseAnalysis):
 
@@ -244,11 +244,6 @@ class MyCallGraph(BaseAnalysis):
         meta_file_path = os.path.join(self.log_dir, f"{pickle_prefix}_META.txt")
 
         _, pos_args, kw_args = self.call_return_pairs[iid].pop()
-
-
-        if self.count > 500:
-            # too much data for now
-            return
 
         try:
             with open(call_pickle_file_path, "wb") as f:

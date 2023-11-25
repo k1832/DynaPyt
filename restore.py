@@ -83,6 +83,14 @@ def main():
                 os.remove(os.path.join(curr_path, file_path))
                 continue
 
+            if file_path.endswith(DYNAPYT_JSON_BACKUP_SUFFIX):
+                os.remove(os.path.join(curr_path, file_path))
+                continue
+
+            if file_path.endswith(PY_SUFFIX + INSTRUMENT_SUFFIX):
+                os.remove(file_path)
+                continue
+
             if not file_path.endswith(PY_SUFFIX):
                 continue
 

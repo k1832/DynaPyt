@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, logging
+import tqdm
 from typing import Optional, List
 import pickle
 from classes.meta_data import MetaData
@@ -108,19 +109,26 @@ def generate_test_case(meta_file: MetaData, ignore_no_arg_calls: bool = True) ->
     try:
         with open(meta_file.call_pickle_path, 'rb') as f:
             pos_args, kw_args = pickle.load(f)
+    except EOFError:
+        logging.debug("Empty args pickle file")
+        return None
     except Exception as e:
+        # Unknown error
         logging.error(e)
-        # Broken pickle file
         return None
 
     # TODO(k1832): Investigate why this causes duplication of a log directory
     try:
         with open(meta_file.return_pickle_path, 'rb') as f:
             ret_value = pickle.load(f)
+    except EOFError:
+        logging.debug("Empty return pickle file")
+        return None
     except Exception as e:
-        # Broken pickle file
+        # Unknown error
         logging.error(e)
         return None
+
     # TODO(k1832): Revisit if ignoring calls with None as return value is a good idea
     if ret_value is None:
         return None
@@ -130,7 +138,7 @@ def generate_test_case(meta_file: MetaData, ignore_no_arg_calls: bool = True) ->
     kw_arg_len = len(kw_args)
 
     if ignore_no_arg_calls and not pos_arg_len and not kw_arg_len:
-        logging.error("No arguments")
+        logging.debug("No arguments")
         return None
 
     ret += get_load_call_pickle_code(meta_file.call_pickle_path, pos_arg_len, kw_arg_len) + "\n"
@@ -186,7 +194,7 @@ def get_test_file_path(meta_file: MetaData) -> str:
 def main():
     meta_files: List[MetaData] = []
 
-    for log_dir_name in os.listdir(LOG_BASE):
+    for log_dir_name in tqdm.tqdm(os.listdir(LOG_BASE)):
         log_dir_path = os.path.join(LOG_BASE, log_dir_name)
         if not os.path.isdir(log_dir_path):
             continue

@@ -117,7 +117,6 @@ def generate_test_case(meta_file: MetaData, ignore_no_arg_calls: bool = True) ->
         logging.error(e)
         return None
 
-    # TODO(k1832): Investigate why this causes duplication of a log directory
     try:
         with open(meta_file.return_pickle_path, 'rb') as f:
             ret_value = pickle.load(f)
@@ -155,7 +154,12 @@ def generate_test_case(meta_file: MetaData, ignore_no_arg_calls: bool = True) ->
     if pos_arg_assign_code:
         ret += pos_arg_assign_code + "\n"
 
-    ret += f"{RET_VAR_NAME} = {meta_file.module_name}("
+    if meta_file.class_name:
+        func_or_class_method = f"{meta_file.class_name}.{meta_file.module_name}"
+    else:
+        func_or_class_method = meta_file.module_name
+
+    ret += f"{RET_VAR_NAME} = {func_or_class_method}("
 
     # Function args are here
     pos_arg_for_func = get_pos_arg_for_func_code(len(pos_args))

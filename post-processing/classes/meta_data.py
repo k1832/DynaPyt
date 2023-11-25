@@ -1,5 +1,8 @@
 import os
+from typing import Optional
 META_FILE_SUFFIX = "_META.txt"
+
+NOT_CLASS_METHOD_NAME = "NOT_A_CLASS_METHOD"
 
 class MetaData:
 
@@ -13,10 +16,14 @@ class MetaData:
         with open(path) as f:
             lines = f.readlines()
 
-        self.module_name = lines[0].strip()
-        self.module_import_path = lines[1].strip()
-        self.call_pickle_path = lines[2].strip()
-        self.return_pickle_path = lines[3].strip()
+        self.module_name: str = lines[0].strip()
+        self.class_name: Optional[str] = lines[1].strip()
+        self.module_import_path = lines[2].strip()
+        self.call_pickle_path = lines[3].strip()
+        self.return_pickle_path = lines[4].strip()
+
+        if self.class_name == NOT_CLASS_METHOD_NAME:
+            self.class_name = None
 
     def debug_print(self) -> None:
         print(self.module_name)

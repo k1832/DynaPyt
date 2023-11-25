@@ -35,6 +35,7 @@ def instrument_code(src, file_path, iids, selected_hooks):
         instrumented_code = CodeInstrumenter(src, file_path, iids, selected_hooks)
         instrumented_ast = ast_wrapper.visit(instrumented_code)
 
+        # TODO(k1832): Invistigate why _rt is not imported in __init__.py
         return "# DYNAPYT: DO NOT INSTRUMENT\n\n" + instrumented_ast.code
     except ParserSyntaxError:
         print(f"Syntax error in {file_path} -- skipping it")

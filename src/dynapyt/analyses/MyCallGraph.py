@@ -7,6 +7,8 @@ from .BaseAnalysis import BaseAnalysis
 
 import inspect
 
+NOT_CLASS_METHOD_NAME = "NOT_A_CLASS_METHOD"
+
 def get_module_file_path(module: Callable) -> Optional[str]:
     """
     Returns the path of the file where the module is defined.
@@ -26,25 +28,35 @@ def is_target_module(file_path: Optional[str], target_module_path: Optional[str]
 
     return target_module_path in file_path
 
-def get_import_path(module: Callable, target_module_path: Optional[str]) -> Tuple[Optional[str], Optional[str], bool]:
+def get_import_path(module: Callable, target_module_path: Optional[str]) -> Tuple[Optional[str], Optional[str], Optional[str], bool]:
     """
-    Returns the module name, import path of the module, and whether or not
-    the module is under specified target path.
-    If `target_module_path` is not specified, the second return value is always False.
+    Returns 4 values:
+        - module name
+        - class name if it's class/instance method, otherwise None
+        - import path of the module or class,
+        - whether or not the module is under specified target path
+    If `target_module_path` is not specified, the last return value is always True.
     If it fails to resolve the module import path,
-    it returns either `"{module_name}", None, False` or `None, None, False`.
+    it returns `"{module_name}", "{class_name}", None, False`.
 
     Example:
         >>> get_import_path(getmodule, "versions/3.11.0/lib/python3.11/inspect.py")
-        "getmodule", "from inspect import getmodule", True
+        "getmodule", None, "from inspect import getmodule", True
         >>> get_import_path(accumulate, "versions/3.11.0/lib/python3.11/inspect.py")
-        "accumulate", "from itertools import accumulate", False
+        "accumulate", None, "from itertools import accumulate", False
     """
 
     try:
         module_name = module.__name__
     except:
-        return None, None, False
+        return None, None, None, False
+
+    class_name = None
+    if inspect.ismethod(module):
+        try:
+            class_name = module.__self__.__name__
+        except:
+            pass
 
     parent_module = inspect.getmodule(module)
 
@@ -53,15 +65,21 @@ def get_import_path(module: Callable, target_module_path: Optional[str]) -> Tupl
     if parent_module == module:
 
         file_path = get_module_file_path(module)
-        return f"import {module_name}", is_target_module(module_name, target_module_path)
+        return (module_name,
+                class_name,
+                f"import {class_name if class_name else module_name}",
+                is_target_module(module_name, target_module_path))
 
     file_path = get_module_file_path(parent_module)
     try:
         parent_module_name = parent_module.__name__
     except:
-        return module_name, None, False
+        return module_name, class_name, None, False
 
-    return module_name, f"from {parent_module_name} import {module_name}", is_target_module(file_path, target_module_path)
+    return (module_name,
+            class_name,
+            f"from {parent_module_name} import {class_name if class_name else module_name}",
+            is_target_module(file_path, target_module_path))
 
 
 LOG_BASE = "/Users/keita/projects/DynaPyt/logs"
@@ -81,7 +99,7 @@ class MyCallGraph(BaseAnalysis):
         # Formatted time string when the class is instantiated
         self.running_time = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
 
-        # key: iid, value: List[(module, pos_args, kw_args)]
+        # key: iid, value: List[(pos_args, kw_args)]
         self.call_return_pairs = {}
 
         self.count = 0
@@ -125,17 +143,16 @@ class MyCallGraph(BaseAnalysis):
 
         """
 
-        function_name, _, is_target = get_import_path(function, TARGET_MODULE_PATH)
+        function_name, _, _, is_target = get_import_path(function, TARGET_MODULE_PATH)
+        if not function_name:
+            return
         if not is_target:
             return
-
-        if function_name is None:
-            function_name = "FAILED_TO_GET_NAME"
 
         if iid not in self.call_return_pairs:
             self.call_return_pairs[iid] = []
 
-        self.call_return_pairs[iid].append((function_name, pos_args, kw_args))
+        self.call_return_pairs[iid].append((pos_args, kw_args))
         # self.log(iid, f"Before function call: {function_name} ({'/'.join(list(dyn_ast.split('/')[-3:]))}) with", pos_args, kw_args)
 
     def post_call(
@@ -187,7 +204,12 @@ class MyCallGraph(BaseAnalysis):
         - module info (name, path, etc.), and corresponding pickle files as a text file
         """
 
-        function_name, import_path, is_target = get_import_path(call, TARGET_MODULE_PATH)
+        function_name, class_name, import_path, is_target = get_import_path(call, TARGET_MODULE_PATH)
+
+        if not function_name:
+            logging.warning(f"Failed to get function name")
+            return
+
         if not is_target:
             return
 
@@ -212,12 +234,11 @@ class MyCallGraph(BaseAnalysis):
         return_pickle_file_path = os.path.join(self.log_dir, f"{pickle_prefix}_RETURN.pickle")
         meta_file_path = os.path.join(self.log_dir, f"{pickle_prefix}_META.txt")
 
-        _, pos_args, kw_args = self.call_return_pairs[iid].pop()
+        pos_args, kw_args = self.call_return_pairs[iid].pop()
 
         try:
             with open(call_pickle_file_path, "wb") as f:
                 pickle.dump((pos_args, kw_args), f, protocol=pickle.HIGHEST_PROTOCOL)
-                # pickle.dump((call, pos_args, kw_args), f, protocol=pickle.HIGHEST_PROTOCOL)
         except:
             with open(self.error_file_path, "a") as f:
                 f.write(f"Failed to dump call: {call_pickle_file_path}\n")
@@ -229,16 +250,32 @@ class MyCallGraph(BaseAnalysis):
             with open(self.error_file_path, "a") as f:
                 f.write(f"Failed to dump return: {return_pickle_file_path}\n")
 
+        if not class_name:
+            class_name = NOT_CLASS_METHOD_NAME
         # Resolve import path from module object and save it as a text file
         # The file content looks like this:
         """
         {function name}
+        {class name if it's a class/instance method, otherwise `NOT_CLASS_METHOD_NAME`}
         {import path}
         {call pickle file path}
         {return pickle file path}
         """
         with open(meta_file_path, "w") as f:
             f.write(function_name + "\n")
+            f.write(class_name + "\n")
             f.write(import_path + "\n")
             f.write(call_pickle_file_path + "\n")
             f.write(return_pickle_file_path + "\n")
+
+    # def begin_execution(self) -> None:
+    #     """Hook for the start of execution."""
+    #     # self.log(-1, "Execution started")
+
+    #     pass
+
+    # def end_execution(self) -> None:
+    #     """Hook for the end of execution."""
+    #     # self.log(-1, "Execution ended")
+
+    #     pass

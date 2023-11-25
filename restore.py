@@ -13,6 +13,8 @@ def main():
 
     if args.path:
         base = os.path.abspath(args.path)
+    elif len(sys.argv) > 1:
+        base = os.path.abspath(sys.argv[1])
 
     print(f"Path: {base}")
 

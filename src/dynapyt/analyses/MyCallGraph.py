@@ -56,7 +56,10 @@ def get_import_path(module: Callable, target_module_path: Optional[str]) -> Tupl
         try:
             class_name = module.__self__.__name__
         except:
-            pass
+            # TODO(k1832): Revisit if skipping instance method is a good idea
+            # TODO(k1832): Revisit if it's sufficient to conclude it's instance method
+            # Exclude instance methods (i.e. methods in a class without @classmethod)
+            return module_name, None, None, None, False
 
     parent_module = inspect.getmodule(module)
 

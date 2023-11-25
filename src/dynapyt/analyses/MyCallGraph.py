@@ -7,39 +7,6 @@ from .BaseAnalysis import BaseAnalysis
 
 import inspect
 
-# from itertools import accumulate
-# # from inspect import getmodule, getabsfile
-# import inspect
-
-# def sum(a, b, c=10, d=1000):
-#     return a + b + c + d
-
-# def get_module(module):
-#         file_path = None
-
-#         parent_module = inspect.getmodule(module)
-#         try:
-#                 file_path = parent_module.__file__
-#         except:
-#                 pass
-
-#         return file_path, parent_module.__name__
-
-# def print_module_info(module):
-#         print(f"Inspecting module: {module.__name__}")
-#         file_path, parenet_module_name = get_module(module)
-#         if file_path is None:
-#                 print("Built-in module")
-#         else:
-#                 print(f"Defined in {file_path}")
-
-#         print(f"Parent module name: {parenet_module_name}\n")
-
-# print_module_info(accumulate)
-# print_module_info(sum)
-# print_module_info(inspect)
-# print_module_info(inspect)
-
 def get_module_file_path(module: Callable) -> Optional[str]:
     """
     Returns the path of the file where the module is defined.
@@ -98,7 +65,8 @@ def get_import_path(module: Callable, target_module_path: Optional[str]) -> Tupl
 
 
 LOG_BASE = "/Users/keita/projects/DynaPyt/logs"
-TARGET_MODULE_PATH = "/projects/casanova/casanova"
+# TARGET_MODULE_PATH = "/projects/casanova/casanova"
+TARGET_MODULE_PATH = "/Users/keita/projects/flair/flair"
 
 class MyCallGraph(BaseAnalysis):
 
@@ -231,8 +199,9 @@ class MyCallGraph(BaseAnalysis):
             print("ERROR: call not found")
             return
 
-        zfilled_iid = str(iid).zfill(5)
-        zfilled_count = str(self.count).zfill(5)
+        zfill_len = 6
+        zfilled_iid = str(iid).zfill(zfill_len)
+        zfilled_count = str(self.count).zfill(zfill_len)
         self.count += 1
 
         # Create a directory for the log files

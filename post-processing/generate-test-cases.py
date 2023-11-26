@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import os, logging
-import tqdm
+from tqdm import tqdm
 from typing import Optional, List
 import pickle
 from classes.meta_data import MetaData
+
+import argparse
 
 logging.basicConfig(level=logging.INFO)
 
@@ -198,7 +200,14 @@ def get_test_file_path(meta_file: MetaData) -> str:
 def main():
     meta_files: List[MetaData] = []
 
-    for log_dir_name in tqdm.tqdm(os.listdir(LOG_BASE)):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--just-count", action="store_true", help="Count meta files and exit")
+    args = parser.parse_args()
+
+    meta_file_count = 0
+
+    print("Parsing meta files...")
+    for log_dir_name in os.listdir(LOG_BASE):
         log_dir_path = os.path.join(LOG_BASE, log_dir_name)
         if not os.path.isdir(log_dir_path):
             continue
@@ -206,14 +215,28 @@ def main():
         for log_file_name in os.listdir(log_dir_path):
             log_file_path = os.path.join(log_dir_path, log_file_name)
             if MetaData.is_meta_file(log_file_path):
+                meta_file_count += 1
+                if args.just_count:
+                    continue
+
                 meta_files.append(MetaData(log_file_path))
 
+    print("Parsing meta files: Done!")
+
+    print("Number of meta files:", meta_file_count)
+
+    if args.just_count:
+        exit()
 
     if not len(meta_files):
         print("No log files")
         exit()
 
-    for i, meta_file in enumerate(meta_files):
+    generate_test_success_count = 0
+
+    for i in tqdm(range(len(meta_files))):
+        meta_file = meta_files[i]
+
         test_code = ""
         for preload_module in preload_modules:
             # print(f"import {preload_module}")
@@ -224,20 +247,20 @@ def main():
 
         # print(generate_test_case(meta_files[0]))
 
-        # TODO(k1832): Function calls with no arguments should be excluded
         test_case_code = generate_test_case(meta_file)
         if test_case_code is None:
-            print(f"Failed to create a test for {meta_file.path}")
+            # print(f"Failed to generate test case for {meta_file.get_test_case_name()}")
             continue
 
         test_code += test_case_code + "\n"
 
         test_file_path = get_test_file_path(meta_file)
-        print(f"Test file path: {test_file_path}")
-        # print(test_code)
+        # print(f"Test file path: {test_file_path}")
         os.makedirs(os.path.dirname(test_file_path), exist_ok=True)
         with open(test_file_path, "w") as f:
             f.write(test_code)
+
+        generate_test_success_count += 1
 
         # print(meta_file.get_log_dir_name())
         # try:
@@ -250,6 +273,7 @@ def main():
         # if i > 3:
         #     break
 
+    print(f"Successfully generated {generate_test_success_count} out of {len(meta_files)}")
 
 if __name__ == '__main__':
     main()

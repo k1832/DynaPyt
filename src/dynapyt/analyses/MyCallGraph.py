@@ -7,6 +7,10 @@ from .BaseAnalysis import BaseAnalysis
 
 import inspect
 
+LOG_BASE = "/Users/keita/projects/DynaPyt/logs"
+# TARGET_MODULE_PATH = "/projects/casanova/casanova"
+TARGET_MODULE_PATH = "/Users/keita/projects/flair/flair"
+
 NOT_CLASS_METHOD_NAME = "NOT_A_CLASS_METHOD"
 
 def get_module_file_path(module: Callable) -> Optional[str]:
@@ -28,14 +32,14 @@ def is_target_module(file_path: Optional[str], target_module_path: Optional[str]
 
     return target_module_path in file_path
 
-def get_import_path(module: Callable, target_module_path: Optional[str]) -> Tuple[Optional[str], Optional[str], Optional[str], bool]:
+def get_import_path(module: Callable, target_module_path: Optional[str] = None) -> Tuple[Optional[str], Optional[str], Optional[str], bool]:
     """
     Returns 4 values:
         - module name
         - class name if it's class/instance method, otherwise None
         - import path of the module or class,
         - whether or not the module is under specified target path
-    If `target_module_path` is not specified, the last return value is always True.
+    If `target_module_path` is not specified or None, the last return value is always False.
     If it fails to resolve the module import path,
     it returns `"{module_name}", "{class_name}", None, False`.
 
@@ -44,6 +48,21 @@ def get_import_path(module: Callable, target_module_path: Optional[str]) -> Tupl
         "getmodule", None, "from inspect import getmodule", True
         >>> get_import_path(accumulate, "versions/3.11.0/lib/python3.11/inspect.py")
         "accumulate", None, "from itertools import accumulate", False
+    """
+
+    """
+    if inspect.ismethod(module):
+        try:
+            class_name = module.__self__.__name__
+            # It's a class method
+        except:
+            # It's an instance method (i.e. methods in a class without @classmethod)
+    else:
+        qualname = module.__qualname__
+        if "." in qualname:
+            # It's a (probably) static method
+        else:
+            # It's a normal function
     """
 
     try:
@@ -59,7 +78,22 @@ def get_import_path(module: Callable, target_module_path: Optional[str]) -> Tupl
             # TODO(k1832): Revisit if skipping instance method is a good idea
             # TODO(k1832): Revisit if it's sufficient to conclude it's instance method
             # Exclude instance methods (i.e. methods in a class without @classmethod)
-            return module_name, None, None, None, False
+            return module_name, None, None, False
+    else:
+        try:
+            qualname = module.__qualname__
+        except:
+            return module_name, None, None, False
+
+        period_split = qualname.split(".")
+
+        if len(period_split) > 2:
+            # Now it can only handle {Class name}.{static method name}
+            logging.warning(f"qualname: {qualname} not supported")
+            return module_name, None, None, False
+
+        if len(period_split) == 2:
+            class_name = period_split[0]
 
     parent_module = inspect.getmodule(module)
 
@@ -85,9 +119,6 @@ def get_import_path(module: Callable, target_module_path: Optional[str]) -> Tupl
             is_target_module(file_path, target_module_path))
 
 
-LOG_BASE = "/Users/keita/projects/DynaPyt/logs"
-# TARGET_MODULE_PATH = "/projects/casanova/casanova"
-TARGET_MODULE_PATH = "/Users/keita/projects/flair/flair"
 
 class MyCallGraph(BaseAnalysis):
 
@@ -217,11 +248,11 @@ class MyCallGraph(BaseAnalysis):
             return
 
         if iid not in self.call_return_pairs:
-            print("ERROR: call not found")
+            logging.error(f"ERROR: call not found for iid: {iid}")
             return
 
         if len(self.call_return_pairs[iid]) == 0:
-            print("ERROR: call not found")
+            logging.error(f"ERROR: call not found for iid: {iid}")
             return
 
         zfill_len = 6

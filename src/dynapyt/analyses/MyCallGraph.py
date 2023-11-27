@@ -9,7 +9,8 @@ import inspect
 
 LOG_BASE = "/Users/keita/projects/DynaPyt/logs"
 # TARGET_MODULE_PATH = "/projects/casanova/casanova"
-TARGET_MODULE_PATH = "/Users/keita/projects/flair/flair"
+# TARGET_MODULE_PATH = "/Users/keita/projects/flair/flair"
+TARGET_MODULE_PATH = "/Users/keita/projects/pdfrw/pdfrw"
 
 NOT_CLASS_METHOD_NAME = "NOT_A_CLASS_METHOD"
 
@@ -82,6 +83,8 @@ def get_import_path(module: Callable, target_module_path: Optional[str] = None) 
     else:
         try:
             qualname = module.__qualname__
+            if not isinstance(module_name, str):
+                raise Exception("qualname is not a string")
         except:
             return module_name, None, None, False
 

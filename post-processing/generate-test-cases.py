@@ -201,8 +201,28 @@ def main():
     meta_files: List[MetaData] = []
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--just-count", action="store_true", help="Count meta files and exit")
+    parser.add_argument("-mc", "--meta-count", action="store_true", help="Count meta files and exit")
+    parser.add_argument("-gc", "--generated-count", action="store_true", help="Count generate files and exit")
     args = parser.parse_args()
+
+    if args.generated_count:
+        test_count = 0
+        dir_count = 0
+        for gen_test_dir_name in os.listdir(GENERATED_TEST_BASE):
+            gen_test_dir_path = os.path.join(GENERATED_TEST_BASE, gen_test_dir_name)
+            if not os.path.isdir(gen_test_dir_path):
+                continue
+
+            dir_count += 1
+
+            for gen_test_file_name in os.listdir(gen_test_dir_path):
+                if gen_test_file_name.endswith(".py"):
+                    test_count += 1
+
+        print("Number of generated test dirs:", dir_count)
+        print("Number of generated test files:", test_count)
+        exit()
+
 
     meta_file_count = 0
 
@@ -216,7 +236,7 @@ def main():
             log_file_path = os.path.join(log_dir_path, log_file_name)
             if MetaData.is_meta_file(log_file_path):
                 meta_file_count += 1
-                if args.just_count:
+                if args.meta_count:
                     continue
 
                 meta_files.append(MetaData(log_file_path))
@@ -225,7 +245,7 @@ def main():
 
     print("Number of meta files:", meta_file_count)
 
-    if args.just_count:
+    if args.meta_count:
         exit()
 
     if not len(meta_files):

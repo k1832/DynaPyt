@@ -1,4 +1,4 @@
-import os
+import os, sys
 from datetime import datetime
 import logging
 import pickle
@@ -6,6 +6,9 @@ from typing import Any, Callable, Dict, Optional, Tuple
 from .BaseAnalysis import BaseAnalysis
 
 import inspect
+
+# To prevent stack overflow 
+sys.setrecursionlimit(10000000)
 
 LOG_BASE = "/Users/keita/projects/DynaPyt/logs"
 # TARGET_MODULE_PATH = "/projects/casanova/casanova"
@@ -83,8 +86,8 @@ def get_import_path(module: Callable, target_module_path: Optional[str] = None) 
     else:
         try:
             qualname = module.__qualname__
-            if not isinstance(module_name, str):
-                raise Exception("qualname is not a string")
+            if not isinstance(qualname, str):
+                return module_name, None, None, False
         except:
             return module_name, None, None, False
 
@@ -181,6 +184,7 @@ class MyCallGraph(BaseAnalysis):
         """
 
         function_name, _, _, is_target = get_import_path(function, TARGET_MODULE_PATH)
+
         if not function_name:
             return
         if not is_target:

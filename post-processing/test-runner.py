@@ -66,7 +66,7 @@ def run_test(path: str,
     _ = child.communicate()[0]
     return child.returncode
 
-def run_test_multiprocess(path: str, module_name: str, success_log: list[str], failed_log: list[str]):
+def run_test_multiprocess(path: str, module_name: str, success_log: List[str], failed_log: List[str]):
     try:
         result = subprocess.run(["python", path], shell=True, check=True, stderr=subprocess.PIPE, text=True)
         if result.returncode:
@@ -116,7 +116,7 @@ def get_meta_file_path_from_test_path(test_path: str) -> str:
 
     return os.path.join(LOG_BASE, dir_name, meta_file_name)
 
-def run_test_concurrent(test_case_file_paths: list[str], coverage: bool = False, rcfile: Optional[str] = None):
+def run_test_concurrent(test_case_file_paths: List[str], coverage: bool = False, rcfile: Optional[str] = None):
     with ProcessPoolExecutor(max_workers=PARALLEL_COUNT) as executor:
 
         processes: list[tuple[Future[any], str, str]] = []

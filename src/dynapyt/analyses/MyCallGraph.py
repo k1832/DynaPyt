@@ -1,3 +1,4 @@
+from collections import defaultdict
 import copy
 import logging
 import os, sys
@@ -20,6 +21,7 @@ TARGET_MODULE_PATH = "/Users/keita/projects/pdfrw/pdfrw"
 NOT_CLASS_METHOD_NAME = "NOT_A_CLASS_METHOD"
 
 TMP_TXT = "/Users/keita/projects/pdfrw/tmp.txt"
+LIMIT_BY_FILE_IID = 20
 
 def write_tmp_log(s):
     with open(TMP_TXT, 'a') as f:
@@ -179,6 +181,10 @@ class MyCallGraph(BaseAnalysis):
 
         self.count = 0
 
+        # self.count_by_file_iid[filename][iid] = count
+        self.count_by_file_iid: dict[str, dict[int, int]] = {}
+
+
         self.log_dir = os.path.join(LOG_BASE, self.running_time)
         self.error_file_path = os.path.join(self.log_dir, "error.txt")
 
@@ -223,7 +229,7 @@ class MyCallGraph(BaseAnalysis):
 
     def post_call(
         self,
-        _dyn_ast: str,  # Not used
+        dyn_ast: str,
         iid: int,
         result: Any,
         function: Callable,
@@ -285,6 +291,16 @@ class MyCallGraph(BaseAnalysis):
 
         if not import_path:
             # logging.warning(f"Failed to get import path")
+            return
+
+        if dyn_ast not in self.count_by_file_iid:
+            self.count_by_file_iid[dyn_ast] = {}
+
+        if iid not in self.count_by_file_iid[dyn_ast]:
+            self.count_by_file_iid[dyn_ast][iid] = 0
+
+        self.count_by_file_iid[dyn_ast][iid] += 1
+        if self.count_by_file_iid[dyn_ast][iid] > LIMIT_BY_FILE_IID:
             return
 
         zfill_len = 6

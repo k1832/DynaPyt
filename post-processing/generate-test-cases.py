@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import defaultdict
 import os, logging
 from tqdm import tqdm
 from typing import Optional, List
@@ -25,6 +26,11 @@ EXPECTED_RET_VAR_NAME = "expected"
 
 preload_modules = ["pickle"]
 
+
+# A callable with no arguments is called only once
+# no_arg_call_checked[import_path] = set()
+# no_arg_call_checked[import_path].add(func_name)
+no_arg_call_called: dict[str, set] = defaultdict(set)
 
 def get_pos_arg_assign_code(pos_arg_len: int) -> Optional[str]:
     if not pos_arg_len:
@@ -161,6 +167,14 @@ def generate_test_case(meta_file: MetaData, ignore_no_arg_calls: bool = True) ->
     else:
         func_or_class_method = meta_file.module_name
 
+    if not pos_arg_len and not kw_arg_len:
+        # No arguments
+        if func_or_class_method in no_arg_call_called[meta_file.module_import_path]:
+            # This callable without arguemnts has already been called
+            return None
+
+        no_arg_call_called[meta_file.module_import_path].add(func_or_class_method)
+
     ret += f"{RET_VAR_NAME} = {func_or_class_method}("
 
     # Function args are here
@@ -265,9 +279,7 @@ def main():
         # print()
         test_code += "\n"
 
-        # print(generate_test_case(meta_files[0]))
-
-        test_case_code = generate_test_case(meta_file)
+        test_case_code = generate_test_case(meta_file, ignore_no_arg_calls=False)
         if test_case_code is None:
             # print(f"Failed to generate test case for {meta_file.get_test_case_name()}")
             continue

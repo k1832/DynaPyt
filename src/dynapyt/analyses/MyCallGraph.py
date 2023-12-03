@@ -1,11 +1,7 @@
-from collections import defaultdict
-import copy
-import logging
 import os, sys
 from datetime import datetime
 import pickle
 from typing import Any, Callable, Dict, Optional, Tuple
-import types
 from .BaseAnalysis import BaseAnalysis
 
 import inspect
@@ -21,7 +17,7 @@ TARGET_MODULE_PATH = "/Users/keita/projects/pdfrw/pdfrw"
 NOT_CLASS_METHOD_NAME = "NOT_A_CLASS_METHOD"
 
 TMP_TXT = "/Users/keita/projects/pdfrw/tmp.txt"
-LIMIT_BY_FILE_IID = 20
+LIMIT_BY_FILE_IID = 15
 
 def write_tmp_log(s):
     with open(TMP_TXT, 'a') as f:
@@ -32,18 +28,9 @@ def is_target_module(module: Callable, target_module_path: Optional[str]) -> boo
         return False
 
     parent = inspect.getmodule(module)
-    if not hasattr(parent, "__file__"):
-        return False
-
     parent_file_path = getattr(parent, "__file__", None)
     if not parent_file_path:
         return False
-
-    # write_tmp_log(parent_file_path + "\n")
-    # if target_module_path in parent_file_path:
-    #     write_tmp_log("In path" + "\n")
-    # else:
-    #     write_tmp_log("Not in path" + "\n")
 
     return target_module_path in parent_file_path
 
@@ -77,13 +64,6 @@ def get_import_path(module: Callable) -> Tuple[Optional[str], Optional[str], Opt
             # It's a normal function
     """
 
-    # TODO(k1832): Revisit if using hasattr -> getattr is a good idea
-    # This is intended to avoid calling __get__ on a method?
-    if not hasattr(module, "__name__"):
-        return (None,
-                None,
-                None)
-
     module_name = getattr(module, "__name__", None)
     if not module_name:
         return (None,
@@ -92,24 +72,8 @@ def get_import_path(module: Callable) -> Tuple[Optional[str], Optional[str], Opt
 
     class_name = None
     if inspect.ismethod(module):
-        if not hasattr(module, "__self__"):
-            # TODO(k1832): Revisit if skipping instance method is a good idea
-            # TODO(k1832): Revisit if it's sufficient to conclude it's instance method
-            # Exclude instance methods (i.e. methods in a class without @classmethod)
-            return (module_name,
-                    None,
-                    None)
-
         class_obj = getattr(module, "__self__", None)
-        if not inspect.isclass(class_obj):
-            # TODO(k1832): Revisit if skipping instance method is a good idea
-            # TODO(k1832): Revisit if it's sufficient to conclude it's instance method
-            # Exclude instance methods (i.e. methods in a class without @classmethod)
-            return (module_name,
-                    None,
-                    None)
-
-        if not hasattr(class_obj, "__name__"):
+        if not class_obj or not inspect.isclass(class_obj):
             # TODO(k1832): Revisit if skipping instance method is a good idea
             # TODO(k1832): Revisit if it's sufficient to conclude it's instance method
             # Exclude instance methods (i.e. methods in a class without @classmethod)
@@ -126,13 +90,7 @@ def get_import_path(module: Callable) -> Tuple[Optional[str], Optional[str], Opt
                     None,
                     None)
     else:
-        if not hasattr(module, "__qualname__"):
-            return (module_name,
-                    None,
-                    None)
-
         qualname = getattr(module, "__qualname__", None)
-
         if qualname and isinstance(qualname, str):
             period_split = qualname.split(".")
         else:
@@ -160,10 +118,7 @@ def get_import_path(module: Callable) -> Tuple[Optional[str], Optional[str], Opt
                 class_name,
                 f"import {class_name if class_name else module_name}")
 
-    parent_module_name = None
-    if hasattr(parent_module, "__name__"):
-        parent_module_name = getattr(parent_module, "__name__", None)
-
+    parent_module_name = getattr(parent_module, "__name__", None)
     if not parent_module_name:
         return (module_name,
                 class_name,
@@ -188,44 +143,6 @@ class MyCallGraph(BaseAnalysis):
         self.log_dir = os.path.join(LOG_BASE, self.running_time)
         self.error_file_path = os.path.join(self.log_dir, "error.txt")
 
-    def pre_call(
-        self, dyn_ast: str, iid: int, function: Callable, pos_args: Tuple, kw_args: Dict
-    ):
-        """Hook called before a function call happens.
-
-
-        Parameters
-        ----------
-        dyn_ast : str
-            The path to the original code. Can be used to extract the syntax tree.
-
-        iid : int
-            Unique ID of the syntax tree node.
-
-        function : str
-            Function which will be called.
-
-        pos_args : Tuple
-            The positional arguments passed to the function.
-
-        kw_args : Dict
-            The keyword arguments passed to the function.
-
-        """
-        return
-
-        # function_name, _, _, is_target = get_import_path(function, TARGET_MODULE_PATH)
-
-        # if not function_name:
-        #     return
-        # if not is_target:
-        #     return
-
-        # if iid not in self.call_return_pairs:
-        #     self.call_return_pairs[iid] = []
-
-        # self.call_return_pairs[iid].append((pos_args, kw_args))
-        # # self.log(iid, f"Before function call: {function_name} ({'/'.join(list(dyn_ast.split('/')[-3:]))}) with", pos_args, kw_args)
 
     def post_call(
         self,
@@ -299,6 +216,8 @@ class MyCallGraph(BaseAnalysis):
         if iid not in self.count_by_file_iid[dyn_ast]:
             self.count_by_file_iid[dyn_ast][iid] = 0
 
+        # TODO(k1832): Consider moving this after saving pickle files
+        # Doing that will make some tests fail now...
         self.count_by_file_iid[dyn_ast][iid] += 1
         if self.count_by_file_iid[dyn_ast][iid] > LIMIT_BY_FILE_IID:
             return

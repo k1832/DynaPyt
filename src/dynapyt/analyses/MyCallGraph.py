@@ -32,8 +32,9 @@ def is_target_module(module: Callable, target_module_path: Optional[str]) -> boo
         return False
 
     parent = inspect.getmodule(module)
-    parent_file_path = getattr(parent, "__file__", None)
-    if not parent_file_path:
+    try:
+        parent_file_path = parent.__file__
+    except:
         return False
 
     return target_module_path in parent_file_path
@@ -68,16 +69,18 @@ def get_import_path(module: Callable) -> Tuple[Optional[str], Optional[str], Opt
             # It's a normal function
     """
 
-    module_name = getattr(module, "__name__", None)
-    if not module_name:
+    try:
+        module_name = module.__name__
+    except:
         return (None,
                 None,
                 None)
 
     class_name = None
     if inspect.ismethod(module):
-        class_obj = getattr(module, "__self__", None)
-        if not class_obj or not inspect.isclass(class_obj):
+        try:
+            class_obj = module.__self__
+        except:
             # TODO(k1832): Revisit if skipping instance method is a good idea
             # TODO(k1832): Revisit if it's sufficient to conclude it's instance method
             # Exclude instance methods (i.e. methods in a class without @classmethod)
@@ -85,8 +88,17 @@ def get_import_path(module: Callable) -> Tuple[Optional[str], Optional[str], Opt
                     None,
                     None)
 
-        class_name = getattr(class_obj, "__name__", None)
-        if not class_name:
+        if not inspect.isclass(class_obj):
+            # TODO(k1832): Revisit if skipping instance method is a good idea
+            # TODO(k1832): Revisit if it's sufficient to conclude it's instance method
+            # Exclude instance methods (i.e. methods in a class without @classmethod)
+            return (module_name,
+                    None,
+                    None)
+
+        try:
+            class_name = class_obj.__name__
+        except:
             # TODO(k1832): Revisit if skipping instance method is a good idea
             # TODO(k1832): Revisit if it's sufficient to conclude it's instance method
             # Exclude instance methods (i.e. methods in a class without @classmethod)
@@ -94,8 +106,14 @@ def get_import_path(module: Callable) -> Tuple[Optional[str], Optional[str], Opt
                     None,
                     None)
     else:
-        qualname = getattr(module, "__qualname__", None)
-        if qualname and isinstance(qualname, str):
+        try:
+            qualname = module.__qualname__
+        except:
+            return (module_name,
+                    None,
+                    None)
+
+        if isinstance(qualname, str):
             period_split = qualname.split(".")
         else:
             return (module_name,
@@ -122,8 +140,9 @@ def get_import_path(module: Callable) -> Tuple[Optional[str], Optional[str], Opt
                 class_name,
                 f"import {class_name if class_name else module_name}")
 
-    parent_module_name = getattr(parent_module, "__name__", None)
-    if not parent_module_name:
+    try:
+        parent_module_name = parent_module.__name__
+    except:
         return (module_name,
                 class_name,
                 None)

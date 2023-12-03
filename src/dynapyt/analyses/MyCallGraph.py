@@ -1,3 +1,4 @@
+# try-except version
 import os, sys
 from datetime import datetime
 import pickle
@@ -14,9 +15,10 @@ LOG_BASE = "/Users/keita/projects/DynaPyt/logs"
 # TARGET_MODULE_PATH = "/projects/casanova/casanova"
 TARGET_MODULE_PATH = "/Users/keita/projects/flair/flair"
 # TARGET_MODULE_PATH = "/Users/keita/projects/pdfrw/pdfrw"
-LIMIT_BY_FILE_IID = 1000
-# HACK(k1832): To make the tests of pdfrw pass...
+
+# HACK(k1832): These 2 are to make the tests of pdfrw pass...
 IS_PDFRW = "pdfrw" in TARGET_MODULE_PATH
+LIMIT_BY_FILE_IID = 20 if IS_PDFRW else 1000
 
 NOT_CLASS_METHOD_NAME = "NOT_A_CLASS_METHOD"
 

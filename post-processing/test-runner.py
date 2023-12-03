@@ -120,6 +120,7 @@ def run_test_concurrent(test_case_file_paths: List[str], coverage: bool = False,
     with ProcessPoolExecutor(max_workers=PARALLEL_COUNT) as executor:
 
         processes: list[tuple[Future[any], str, str]] = []
+        success_count = 0
         handle_from = 0
         for test_case_file_path in tqdm(test_case_file_paths):
             meta_file_path = get_meta_file_path_from_test_path(test_case_file_path)
@@ -151,6 +152,7 @@ def run_test_concurrent(test_case_file_paths: List[str], coverage: bool = False,
             if len(processes) - handle_from >= PARALLEL_COUNT:
                 for process, processed_file_path, processed_module_name in processes[handle_from:]:
                     if process.result():
+                        success_count += 1
                         with open(TEST_STATS_SUCCESS_FILE, "a") as f:
                             f.write(f"{processed_file_path} {processed_module_name}\n")
                     else:
@@ -160,6 +162,7 @@ def run_test_concurrent(test_case_file_paths: List[str], coverage: bool = False,
                 handle_from = len(processes)
 
         # Handle the rest
+
         if coverage:
             if len(processes) > handle_from:
                     for process, processed_file_path, _ in processes[handle_from:]:
@@ -173,6 +176,7 @@ def run_test_concurrent(test_case_file_paths: List[str], coverage: bool = False,
         if len(processes) > handle_from:
             for process, processed_file_path, processed_module_name in processes[handle_from:]:
                 if process.result():
+                    success_count += 1
                     with open(TEST_STATS_SUCCESS_FILE, "a") as f:
                         f.write(f"{processed_file_path} {processed_module_name}\n")
                 else:
@@ -180,6 +184,8 @@ def run_test_concurrent(test_case_file_paths: List[str], coverage: bool = False,
                         f.write(f"{processed_file_path} {processed_module_name}\n")
 
             handle_from = len(processes)
+
+        print(f"Total run: {handle_from}, Success: {success_count}, Failure: {handle_from - success_count}")
 
 def main():
     parser = argparse.ArgumentParser()

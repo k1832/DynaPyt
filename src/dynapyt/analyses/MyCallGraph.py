@@ -10,14 +10,18 @@ import inspect
 sys.setrecursionlimit(10000000)
 
 LOG_BASE = "/Users/keita/projects/DynaPyt/logs"
+
 # TARGET_MODULE_PATH = "/projects/casanova/casanova"
-# TARGET_MODULE_PATH = "/Users/keita/projects/flair/flair"
-TARGET_MODULE_PATH = "/Users/keita/projects/pdfrw/pdfrw"
+TARGET_MODULE_PATH = "/Users/keita/projects/flair/flair"
+# TARGET_MODULE_PATH = "/Users/keita/projects/pdfrw/pdfrw"
+LIMIT_BY_FILE_IID = 1000
+# HACK(k1832): To make the tests of pdfrw pass...
+IS_PDFRW = "pdfrw" in TARGET_MODULE_PATH
 
 NOT_CLASS_METHOD_NAME = "NOT_A_CLASS_METHOD"
 
 TMP_TXT = "/Users/keita/projects/pdfrw/tmp.txt"
-LIMIT_BY_FILE_IID = 15
+
 
 def write_tmp_log(s):
     with open(TMP_TXT, 'a') as f:
@@ -193,6 +197,17 @@ class MyCallGraph(BaseAnalysis):
         - module info (name, path, etc.), and corresponding pickle files as a text file
         """
 
+        if dyn_ast not in self.count_by_file_iid:
+            self.count_by_file_iid[dyn_ast] = {}
+
+        if iid not in self.count_by_file_iid[dyn_ast]:
+            self.count_by_file_iid[dyn_ast][iid] = 0
+
+        # TODO(k1832): Consider moving this after saving pickle files
+        # Doing that will make some tests fail now...
+        if self.count_by_file_iid[dyn_ast][iid] > LIMIT_BY_FILE_IID:
+            return
+
         if not is_target_module(function, TARGET_MODULE_PATH):
             return
 
@@ -210,17 +225,8 @@ class MyCallGraph(BaseAnalysis):
             # logging.warning(f"Failed to get import path")
             return
 
-        if dyn_ast not in self.count_by_file_iid:
-            self.count_by_file_iid[dyn_ast] = {}
-
-        if iid not in self.count_by_file_iid[dyn_ast]:
-            self.count_by_file_iid[dyn_ast][iid] = 0
-
-        # TODO(k1832): Consider moving this after saving pickle files
-        # Doing that will make some tests fail now...
-        self.count_by_file_iid[dyn_ast][iid] += 1
-        if self.count_by_file_iid[dyn_ast][iid] > LIMIT_BY_FILE_IID:
-            return
+        if IS_PDFRW:
+            self.count_by_file_iid[dyn_ast][iid] += 1
 
         zfill_len = 6
         zfilled_iid = str(iid).zfill(zfill_len)
@@ -259,6 +265,8 @@ class MyCallGraph(BaseAnalysis):
                 f.write(f"Failed to dump return: {return_pickle_file_path}\n")
             return
 
+        if not IS_PDFRW:
+            self.count_by_file_iid[dyn_ast][iid] += 1
 
         # Resolve import path from module object and save it as a text file
         # The file content looks like this:

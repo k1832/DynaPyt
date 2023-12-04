@@ -218,6 +218,9 @@ class MyCallGraph(BaseAnalysis):
         - module info (name, path, etc.), and corresponding pickle files as a text file
         """
 
+        if not is_target_module(function, TARGET_MODULE_PATH):
+            return
+
         if dyn_ast not in self.count_by_file_iid:
             self.count_by_file_iid[dyn_ast] = {}
 
@@ -227,9 +230,6 @@ class MyCallGraph(BaseAnalysis):
         # TODO(k1832): Consider moving this after saving pickle files
         # Doing that will make some tests fail now...
         if self.count_by_file_iid[dyn_ast][iid] > LIMIT_BY_FILE_IID:
-            return
-
-        if not is_target_module(function, TARGET_MODULE_PATH):
             return
 
         function_name, class_name, import_path = get_import_path(function)

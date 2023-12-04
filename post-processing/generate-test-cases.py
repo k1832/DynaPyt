@@ -141,6 +141,10 @@ def generate_test_case(meta_file: MetaData, ignore_no_arg_calls: bool = True) ->
         return None
 
 
+    if pos_args is None or kw_args is None:
+        logging.error("None args")
+        return None
+
     pos_arg_len = len(pos_args)
     kw_arg_len = len(kw_args)
 

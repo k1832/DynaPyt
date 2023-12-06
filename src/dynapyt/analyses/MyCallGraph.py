@@ -13,8 +13,9 @@ sys.setrecursionlimit(10000000)
 LOG_BASE = "/Users/keita/projects/DynaPyt/logs"
 
 # TARGET_MODULE_PATH = "/projects/casanova/casanova"
-TARGET_MODULE_PATH = "/Users/keita/projects/flair/flair"
+# TARGET_MODULE_PATH = "/Users/keita/projects/flair/flair"
 # TARGET_MODULE_PATH = "/Users/keita/projects/pdfrw/pdfrw"
+TARGET_MODULE_PATH = "/Users/keita/projects/sacred/sacred"
 
 # HACK(k1832): These 2 are to make the tests of pdfrw pass...
 IS_PDFRW = "pdfrw" in TARGET_MODULE_PATH
